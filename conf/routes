@@ -14,3 +14,6 @@ GET     /locations/json       controllers.ApplicationController.index
 GET     /v1/pricehistory            controllers.ApplicationController.priceHistory(period: String, rollingavg:Int?=1)
 GET     /v1/pricehistoryperiod      controllers.ApplicationController.priceHistoryPeriod(start: String, end: String, rollingavg: Int?=1)
 GET     /v1/priceforecast           controllers.ApplicationController.priceForecast(days:Int, rollingavg: Int?=1)
+
+
+GET     /display/pricehistory       controllers.WSApplication.price(period: String, rollingavg:Int?=1)

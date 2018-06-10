@@ -1,6 +1,31 @@
-@import b3.vertical.fieldConstructor
-@import models._
-@import controllers._
-@(webJarAssets: WebJarAssets)(implicit message:Messages,flash:Flash)
-@main("knolx")(webJarAssets) {
+@import controllers.Point
+@(prices: Seq[Point])
+
+@main("Welcome to Bitcoin Trend") {
+
+<div class="well">
+    <h1>Current Prices</h1>
+</div>
+
+
+
+<table class="highchart" data-graph-container-before="1" data-graph-type="line">
+    <caption>Bitcoin Prices</caption>
+    <thead>
+    <tr>
+        <th>Price</th>
+        <th>DateTime</th>
+    </tr>
+    </thead>
+    <tbody>
+    @for(price <- prices){
+    <tr>
+        <td>@price.price</td>
+        <td>@price.time</td>
+    </tr>
+    }
+    </tbody>
+</table>
+
+
 }

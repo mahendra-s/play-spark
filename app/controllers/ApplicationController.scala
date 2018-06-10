@@ -7,7 +7,7 @@ import javax.inject.Inject
 import scala.concurrent.Future
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import play.api.i18n.MessagesApi
-import play.api.libs.json.Json
+import play.api.libs.json.{JsPath, Json, Reads}
 import play.api.mvc.{Action, AnyContent, Controller}
 import com.cloudera.sparkts.models.ARIMA
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
@@ -17,19 +17,31 @@ import org.apache.spark.sql.functions._
 import services.Price
 import spire.implicits
 
+case class Point(time:String, price: String )
+
 class ApplicationController @Inject()(implicit webJarAssets: WebJarAssets,
                                       val messagesApi: MessagesApi) extends Controller {
 
   def index: Action[AnyContent] =
     Action.async {
+      import play.api.libs.json._
+      import play.api.libs.functional.syntax._
 
       val weekQuery = s""" SELECT time, price FROM godzilla where time > current_timestamp - interval 1 week"""
       val sparkSession = Init.getSparkSessionInstance
 
       val result: DataFrame = sparkSession.sql(weekQuery)
+      val rawJson = result.toJSON.collect().mkString("[",",","]")
+      val json: JsValue = Json.parse(rawJson)
 
-      val rawJson = result.toJSON.collect().mkString
-      Future.successful(Ok(Json.toJson(rawJson)))
+
+      implicit val priceReads: Reads[Point] = (
+            (JsPath \\ "price").read[String] and
+              (JsPath \\ "time").read[String]
+        ) (Point.apply _)
+
+      val rplyWith: Seq[Point] = (json).as[Seq[Point]]
+      Future.successful(Ok(views.html.index(rplyWith)))
     }
    def priceHistory(period: String, rollingavg:Int ) = Action{
      val sparkSession = Init.getSparkSessionInstance
@@ -51,7 +63,7 @@ class ApplicationController @Inject()(implicit webJarAssets: WebJarAssets,
          } else res)
      .toJSON.collect()
 
-     Ok(rowJosn.mkString)
+     Ok(rowJosn.mkString("[",",","]"))
    }
 
 
@@ -86,7 +98,16 @@ class ApplicationController @Inject()(implicit webJarAssets: WebJarAssets,
     val sparkSession = Init.getSparkSessionInstance
     val doubVals = sparkSession.sql("select price from godzilla").rdd.map(r => r.getString(0)).map(_.toDouble)
 
-    val ts = Vectors.dense{ doubVals.collect}
+    val ts = Vectors.dense{
+      if(rollingAvg > 1){
+      import services.MovingAverageFunction._
+      implicit val movingAvgPeriod = rollingAvg
+      doubVals.collect.map(movingAvg)
+      }
+        else
+      doubVals.collect
+    }
+
     val arimaModel = ARIMA.fitModel(1, 1, 1, ts)
 //    println("coefficients: " + arimaModel.coefficients.mkString(","))
 //    println(ts.toArray.mkString(","))
@@ -95,6 +116,7 @@ class ApplicationController @Inject()(implicit webJarAssets: WebJarAssets,
 //    Ok(s" pedicted days $days with rolling$rollingAvg")
     Ok(s" pedicted days $days result $forecast")
   }
+
 }
 
 

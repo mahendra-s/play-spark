@@ -72,8 +72,14 @@ class ApplicationController @Inject()(implicit webJarAssets: WebJarAssets,
     import sparkSession.implicits._
     val res:Dataset[Price] = sparkSession.sql(qry).map(r => Price(r.getTimestamp(0),r.getString(1).toDouble))
 
+    val rowJosn = (if(rollingAvg > 1){
+      import services.MovingAverageFunction._
+      implicit val movingAvgPeriod = rollingAvg
+      res.map(r => r match{case Price(time:Timestamp, price:Double) => Price(time, movingAvg(price))})
+    } else res)
+      .toJSON.collect()
 //    Ok(s"start:$start end:$end rolling:$rollingAvg")
-    Ok(res.toJSON.collect().mkString)
+    Ok(rowJosn.mkString)
   }
 
   def priceForecast(days: Int, rollingAvg: Int) = Action {

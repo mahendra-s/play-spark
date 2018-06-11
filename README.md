@@ -4,6 +4,7 @@
 git clone 
 
 cd play-spark
+
 sbt clean run 
 
 

@@ -3,6 +3,7 @@ package controllers
 import java.sql.Timestamp
 
 import bootstrap.Init
+import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{Dataset, _}
 import play.api.libs.functional.syntax._
 import play.api.libs.json.{JsPath, JsValue, Json, Reads}
@@ -25,7 +26,7 @@ class WSApplication extends Controller {
     }
 
     import sparkSession.implicits._
-    val res: Dataset[Price] = result.map(r => Price(r.getTimestamp(0), r.getString(1)))
+    val res: Dataset[Price] = result.sort(desc("time")).map(r => Price(r.getTimestamp(0), r.getString(1)))
 
     val rowJosn = (if (rollingavg > 1) {
       import services.MovingAverageFunction._

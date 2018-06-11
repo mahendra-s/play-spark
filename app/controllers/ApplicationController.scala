@@ -8,6 +8,7 @@ import com.cloudera.sparkts.models.ARIMA
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.sql.{DataFrame, Dataset}
 import play.api.i18n.MessagesApi
+import org.apache.spark.sql.functions._
 import play.api.mvc.{Action, AnyContent, Controller}
 import services.Price
 
@@ -30,7 +31,8 @@ class ApplicationController @Inject()(implicit webJarAssets: WebJarAssets,
       val sparkSession = Init.getSparkSessionInstance
 
       val result: DataFrame = sparkSession.sql(selQuery)
-      val rawJson = result.toJSON.collect().mkString("[", ",", "]")
+      val rawJson = result.sort(desc("time"))
+        .toJSON.collect().mkString("[", ",", "]")
       val json: JsValue = Json.parse(rawJson)
 
 
@@ -54,7 +56,8 @@ class ApplicationController @Inject()(implicit webJarAssets: WebJarAssets,
     }
 
     import sparkSession.implicits._
-    val res: Dataset[Price] = result.map(r => Price(r.getTimestamp(0), r.getString(1)))
+    val res: Dataset[Price] = result.sort(desc("time"))
+      .map(r => Price(r.getTimestamp(0), r.getString(1)))
 
     val rowJosn = (if (rollingavg > 1) {
       import services.MovingAverageFunction._
@@ -85,7 +88,7 @@ class ApplicationController @Inject()(implicit webJarAssets: WebJarAssets,
     else
       s"""SELECT time, price FROM godzilla where false"""
     import sparkSession.implicits._
-    val res: Dataset[Price] = sparkSession.sql(qry).map(r => Price(r.getTimestamp(0), r.getString(1)))
+    val res: Dataset[Price] = sparkSession.sql(qry).sort(desc("time")).map(r => Price(r.getTimestamp(0), r.getString(1)))
 
     val rowJosn = (if (rollingAvg > 1) {
       import services.MovingAverageFunction._
@@ -101,7 +104,7 @@ class ApplicationController @Inject()(implicit webJarAssets: WebJarAssets,
 
   def priceForecast(days: Int, rollingAvg: Int) = Action {
     val sparkSession = Init.getSparkSessionInstance
-    val doubVals = sparkSession.sql("select price from godzilla").rdd.map(r => r.getString(0)).map(_.toDouble)
+    val doubVals = sparkSession.sql("select price from godzilla").sort(asc("time")).rdd.map(r => r.getString(0)).map(_.toDouble)
 
     val ts = Vectors.dense {
       if (rollingAvg > 1) {

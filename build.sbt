@@ -18,8 +18,7 @@ libraryDependencies ++= Seq(
   "org.apache.spark" % "spark-core_2.11" % "2.1.1",
   "org.webjars" %% "webjars-play" % "2.5.0-1",
   "org.webjars" % "bootstrap" % "3.3.6",
-  "org.apache.spark" % "spark-sql_2.11" % "2.1.1",
-  "com.adrianhurt" %% "play-bootstrap" % "1.0-P25-B3"
+  "org.apache.spark" % "spark-sql_2.11" % "2.1.1"
 )
 
 
@@ -27,4 +26,7 @@ libraryDependencies +=  "org.apache.spark" %% "spark-mllib" % "2.1.0"
 
 libraryDependencies += "com.cloudera.sparkts" % "sparkts" % "0.4.0"
 
+libraryDependencies += "org.codehaus.janino" % "janino" % "3.0.7"
+
 libraryDependencies ~= { _.map(_.exclude("org.slf4j", "slf4j-log4j12")) }
+

@@ -14,36 +14,38 @@ import services.Price
   */
 
 class WSApplication extends Controller {
-  def price(period: String, rollingavg:Int ) = Action{
+  def price(period: String, rollingavg: Int) = Action {
     val sparkSession = Init.getSparkSessionInstance
-    val result: DataFrame= period match{
+    val result: DataFrame = period match {
       case "week" => val weekQuery = s""" SELECT time, price FROM godzilla where time > current_timestamp - interval 1 week"""
         sparkSession.sql(weekQuery)
-      case "month" =>val monthQuery = s""" SELECT time, price FROM godzilla where time > current_timestamp - interval 1 month"""
+      case "month" => val monthQuery = s""" SELECT time, price FROM godzilla where time > current_timestamp - interval 1 month"""
         sparkSession.sql(monthQuery)
       case _ => sparkSession.sql("SELECT time, price FROM godzilla where false")
     }
 
     import sparkSession.implicits._
-    val res:Dataset[Price] = result.map(r => Price(r.getTimestamp(0),r.getString(1).toDouble))
+    val res: Dataset[Price] = result.map(r => Price(r.getTimestamp(0), r.getString(1)))
 
-    val rowJosn = (if(rollingavg > 1){
+    val rowJosn = (if (rollingavg > 1) {
       import services.MovingAverageFunction._
       implicit val movingAvgPeriod = rollingavg
-      res.map(r => r match{case Price(time:Timestamp, price:Double) => Price(time, movingAvg(price))})
+      res.map(r => r match {
+        case Price(time: Timestamp, price: String) => Price(time, movingAvg(price.toDouble).toString)
+      })
     } else res)
-      .toJSON.collect().mkString("[",",","]")
+      .toJSON.collect().mkString("[", ",", "]")
 
-  val json: JsValue = Json.parse(rowJosn)
+    val json: JsValue = Json.parse(rowJosn)
 
-  implicit val priceReads: Reads[Point] = (
-    (JsPath \\ "price").read[String] and
-      (JsPath \\ "time").read[String]
-    ) (Point.apply _)
+    implicit val priceReads: Reads[Point] = (
+      (JsPath \\ "price").read[String] and
+        (JsPath \\ "time").read[String]
+      ) (Point.apply _)
 
-  val rplyWith: Seq[Point] = (json).as[Seq[Point]]
-  Ok(views.html.index(rplyWith))
-}
+    val rplyWith: Seq[Point] = (json).as[Seq[Point]]
+    Ok(views.html.index(rplyWith))
+  }
 }
 
 

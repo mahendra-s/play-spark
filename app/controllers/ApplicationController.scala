@@ -61,6 +61,7 @@ class ApplicationController @Inject()(implicit webJarAssets: WebJarAssets,
 
     val rowJosn = (if (rollingavg > 1) {
       import services.MovingAverageFunction._
+      clearQueue
       implicit val movingAvgPeriod = rollingavg
       res.map(r => r match {
         case Price(time: Timestamp, price: String) => Price(time, movingAvg(price.toDouble).toString)
@@ -92,6 +93,7 @@ class ApplicationController @Inject()(implicit webJarAssets: WebJarAssets,
 
     val rowJosn = (if (rollingAvg > 1) {
       import services.MovingAverageFunction._
+      clearQueue
       implicit val movingAvgPeriod = rollingAvg
       res.map(r => r match {
         case Price(time: Timestamp, price: String) => Price(time, movingAvg(price.toDouble).toString)
@@ -109,6 +111,7 @@ class ApplicationController @Inject()(implicit webJarAssets: WebJarAssets,
     val ts = Vectors.dense {
       if (rollingAvg > 1) {
         import services.MovingAverageFunction._
+        clearQueue
         implicit val movingAvgPeriod = rollingAvg
         doubVals.collect.map(movingAvg)
       }

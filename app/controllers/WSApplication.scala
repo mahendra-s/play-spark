@@ -30,6 +30,7 @@ class WSApplication extends Controller {
 
     val rowJosn = (if (rollingavg > 1) {
       import services.MovingAverageFunction._
+      clearQueue
       implicit val movingAvgPeriod = rollingavg
       res.map(r => r match {
         case Price(time: Timestamp, price: String) => Price(time, movingAvg(price.toDouble).toString)

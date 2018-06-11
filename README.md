@@ -7,6 +7,8 @@ cd play-spark
 
 sbt clean run 
 
+### Home page
+![Home Page](/images/home.png)
 
 ### get to get bitcoin price history for last week 
 	/v1/pricehistory?period=week
@@ -41,6 +43,8 @@ e.g http://localhost:9000/v1/priceforecast?days=15
     /v1/priceforecast?days=15&rollingavg=3
 e.g http://localhost:9000/v1/priceforecast?days=15&rollingavg=3
 
+### Graphical Reports
+![Price History Display](/images/pricehistory.png)
 
 ### To see data trend with graphical report
 	/display/pricehistory?period=week&rollingavg=2

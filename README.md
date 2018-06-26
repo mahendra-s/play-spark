@@ -1,12 +1,11 @@
 #  play-spark
 ##  Run Bitcoin data application 
 
-git clone 
-
+```
+git clone git@github.com:mahendra-s/play-spark.git
 cd play-spark
-
 sbt clean run 
-
+```
 ### Home page
 ![Home Page](/images/home.png)
 
